@@ -126,12 +126,12 @@ Three pages in React, styled to `docs/BRAND.md`: Instrument Sans for text, JetBr
 
 Success criteria:
 
-- [ ] Vitest tests with a stubbed `fetch` cover each page: the queue's rows and counts, a decided claim's decision and steps, the Run agent button calling `run_agent`, the sign-off panel calling `sign_off_claim`, and the instructions page.
-- [ ] `tsc` passes in strict mode with no `any`; `npm run check:ts` passes with coverage of at least 80%.
-- [ ] In the browser with the Playwright MCP server, with `npm run dev` running: the queue shows 25 claims all waiting; CLM-1001 shows the full claim, policy and history; the instructions page shows the instructions.
-- [ ] In the browser, Run agent on a claim shows the steps appear one by one, then the decision. (This calls the real model.)
-- [ ] In the browser, a claim the agent approved over $1,000 shows as waiting for sign-off, and signing off as a handler moves it to decided with the payment shown.
-- [ ] Screenshots in light and dark mode match the brand: the right fonts and colors, no one-edge borders, no lines across the top.
+- [x] Vitest tests with a stubbed `fetch` cover each page: the queue's rows and counts, a decided claim's decision and steps, the Run agent button calling `run_agent`, the sign-off panel calling `sign_off_claim`, and the instructions page.
+- [x] `tsc` passes in strict mode with no `any`; `npm run check:ts` passes with coverage of at least 80%.
+- [x] In the browser (checked with a Playwright script, as the Playwright MCP server wasn't connected), with `npm run dev` running: the queue shows 25 claims all waiting; CLM-1001 shows the full claim, policy and history; the instructions page shows the instructions.
+- [x] In the browser, Run agent on a claim shows the steps appear one by one, then the decision. (This calls the real model; checked with `MODEL_NAME=openrouter/free`.)
+- [x] In the browser, a claim the agent approved over $1,000 shows as waiting for sign-off, and signing off as a handler moves it to decided with the payment shown.
+- [x] Screenshots in light and dark mode match the brand: the right fonts and colors, no one-edge borders, no lines across the top.
 
 ## Phase 6: End-to-end tests and handover
 

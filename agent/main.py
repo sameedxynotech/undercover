@@ -86,7 +86,7 @@ def decide_claim(
 ) -> str:
     """Record the decision: the payout (0 unless approved), the reason in two or
     three sentences, and the section of the policy wording that settles it."""
-    return ask(
+    result = ask(
         "POST",
         f"/api/claims/{claim_id}/decision",
         {
@@ -96,6 +96,11 @@ def decide_claim(
             "policy_section": policy_section,
         },
     )
+    if decision == "approve" and not result.startswith("Refused"):
+        result += (
+            f"\nThe decision is recorded. Now pay it with pay_claim for {payout:.2f}."
+        )
+    return result
 
 
 @tool
@@ -135,8 +140,8 @@ def steps(message: BaseMessage) -> list[dict[str, str]]:
     """Turn one message from the agent's run into steps for the dashboard."""
     found = []
     if isinstance(message, AIMessage):
-        if message.text:
-            found.append({"kind": "thought", "text": message.text})
+        if message.text.strip():
+            found.append({"kind": "thought", "text": message.text.strip()})
         found.extend(
             {"kind": "tool_call", "text": f"{call['name']}({json.dumps(call['args'])})"}
             for call in message.tool_calls

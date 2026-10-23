@@ -64,6 +64,20 @@ def test_approves_and_pays(client):
     assert kinds[-1] == "thought"
     assert claim["steps"][0]["text"] == 'get_claim({"claim_id": "CLM-1001"})'
     assert claim["steps"][1]["text"].startswith('{"claim_id": "CLM-1001"')
+    told = [step["text"] for step in claim["steps"] if "pay_claim for" in step["text"]]
+    assert told == [
+        '{"claim_id":"CLM-1001","status":"in_progress"}\n'
+        "The decision is recorded. Now pay it with pay_claim for 420.00."
+    ]
+
+
+def test_blank_thoughts_are_skipped(client):
+    blank = decision("decline", 0)
+    blank.content = "  \n"
+    replies = [blank, AIMessage(content="No.")]
+    main.run("CLM-1001", "thread-1", stub(*replies))
+    kinds = [step["kind"] for step in client.get(CLAIM).json()["steps"]]
+    assert kinds == ["tool_call", "tool_result", "thought"]
 
 
 @pytest.mark.parametrize("outcome", ["decline", "refer"])

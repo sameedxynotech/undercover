@@ -116,6 +116,7 @@ def test_over_the_limit_payment_waits_for_sign_off(client):
     claim = client.get(CLAIM).json()
     assert claim["payment"]["amount"] == 1250
     assert claim["sign_off"]["handler_id"] == "HND-01"
+    assert claim["sign_off"]["handler_name"] == "Dana Whitfield"
     assert claim["sign_off"]["signed_off_at"]
     listed = client.get("/api/claims").json()[0]
     assert (listed["decision"], listed["payout"]) == ("approve", 1250)

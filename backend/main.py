@@ -93,6 +93,10 @@ def full_claim(connection: sqlite3.Connection, claim_id: str) -> dict[str, Any]:
     claim["status"] = claim_status(connection, claim_id)
     claim["decision"] = row_or_none(connection, "decisions", claim_id)
     claim["sign_off"] = row_or_none(connection, "sign_offs", claim_id)
+    if claim["sign_off"]:
+        handler_id = claim["sign_off"]["handler_id"]
+        handler = record(connection, "handlers", "handler_id", handler_id)
+        claim["sign_off"]["handler_name"] = handler["name"]
     claim["payment"] = row_or_none(connection, "payments", claim_id)
     claim["steps"] = [
         dict(row)

@@ -1,0 +1,413 @@
+:root {
+  --sea-green: #06d6a0;
+  --marigold: #ffc145;
+  --coral: #f78c6b;
+  --cerulean: #118ab2;
+  --raspberry: #ef476f;
+  --midnight: #073b4c;
+  --sea-mist: #cdd8db;
+
+  --page: #f0f4f5;
+  --panel: #ffffff;
+  --ink: var(--midnight);
+  --muted: #4a6a75;
+  --line: #e2eaec;
+  --green-text: #037a5b;
+  --gold-text: #8a5a00;
+  --link: var(--cerulean);
+
+  color-scheme: light dark;
+  font-family: "Instrument Sans", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--page);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #04232e;
+    --panel: #000000;
+    --ink: var(--sea-mist);
+    --muted: #8fa8b0;
+    --line: #12343f;
+    --green-text: #5ff0c8;
+    --gold-text: #ffd987;
+    --link: #5cc3e6;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+}
+
+a {
+  color: var(--link);
+}
+
+.mono,
+pre {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.25rem 2rem 0.5rem;
+}
+
+.brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.tagline {
+  font-family: "Instrument Serif", serif;
+  font-style: italic;
+  font-size: 1.2rem;
+  color: var(--muted);
+}
+
+nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+nav a {
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+nav a[aria-current="page"] {
+  background: var(--panel);
+  font-weight: 600;
+}
+
+main {
+  padding: 1rem 2rem 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+h2,
+h3,
+h4 {
+  margin: 0 0 0.75rem;
+}
+
+h4 {
+  margin-top: 1rem;
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.notice {
+  padding: 2rem;
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.count {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  color: var(--midnight);
+}
+
+.count-number {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.count-waiting,
+.status-waiting {
+  background: var(--cerulean);
+  color: #ffffff;
+}
+
+.count-in_progress,
+.status-in_progress {
+  background: var(--marigold);
+}
+
+.count-awaiting_sign_off,
+.status-awaiting_sign_off {
+  background: var(--coral);
+}
+
+.count-decided,
+.status-decided {
+  background: var(--sea-green);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-in_progress,
+.status-awaiting_sign_off,
+.status-decided {
+  color: var(--midnight);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.55rem 0.5rem;
+}
+
+th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+tbody tr:nth-child(odd) {
+  background: var(--page);
+}
+
+.number {
+  text-align: right;
+}
+
+.total td {
+  font-weight: 600;
+}
+
+.claim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.claim-header h2 {
+  margin-top: 0.5rem;
+}
+
+.claim-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.5rem 1.1rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--sea-green);
+  color: var(--midnight);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+select {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.decision {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.decision-approve {
+  color: var(--green-text);
+}
+
+.decision-decline {
+  color: var(--raspberry);
+}
+
+.decision-refer {
+  color: var(--gold-text);
+}
+
+.paid {
+  font-weight: 600;
+  color: var(--green-text);
+}
+
+.sign-off {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--page);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.sign-off p {
+  margin: 0;
+  flex-basis: 100%;
+}
+
+.document {
+  background: var(--page);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.document h4 {
+  margin: 0 0 0.35rem;
+}
+
+.document p {
+  margin: 0;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 32rem;
+  overflow-y: auto;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.75rem;
+  background: var(--page);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+}
+
+.step-kind {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.step-text {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.step-thought .step-text {
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.step-error {
+  background: var(--raspberry);
+  color: #ffffff;
+}
+
+.step-error .step-kind {
+  color: #ffffff;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+dt {
+  color: var(--muted);
+}
+
+dd {
+  margin: 0;
+}
+
+.history {
+  padding-left: 1.25rem;
+  margin: 0;
+}
+
+.instructions {
+  font-family: inherit;
+  font-size: 1rem;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .masthead,
+  main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .claim-header {
+    flex-direction: column;
+  }
+
+  .panel {
+    overflow-x: auto;
+  }
+}
