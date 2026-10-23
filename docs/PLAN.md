@@ -106,14 +106,14 @@ Success criteria:
 
 ## Phase 4: Running the agent from the backend
 
-- `run_agent` checks the claim is `waiting`, then starts `agent.run(claim_id, thread_id)` as a FastAPI background task with a new thread id, and returns 202 at once.
+- `run_agent` marks the claim `in_progress` (as `start_claim` does), then starts the agent's `work(claim_id, thread_id)` as a FastAPI background task with a new thread id, and returns 202 at once. `run` is `start_claim` then `work`, so the queue shows the claim in progress as soon as the button is pressed.
 - The agent in the background reaches the backend over HTTP at `BACKEND_URL` (`http://localhost:8000`), as it does from the command line.
 
 Success criteria:
 
-- [ ] A test replaces `agent.run` with a stub and checks that `run_agent` returns 202 and calls it once with the claim id and a thread id; a second call on a claim that isn't `waiting` returns 409.
-- [ ] With `npm run dev` running, `curl -X POST localhost:8000/api/claims/CLM-1002/run` returns 202, and polling `GET /api/claims/CLM-1002` shows `in_progress` with steps arriving, then `decided` or `awaiting_sign_off`.
-- [ ] `npm run check:python` passes.
+- [x] A test replaces the agent's `work` with a stub and checks that `run_agent` returns 202, marks the claim `in_progress` and calls it once with the claim id and a thread id; a second call on a claim that isn't `waiting` returns 409.
+- [x] With `npm run dev` running, `curl -X POST localhost:8000/api/claims/CLM-1002/run` returns 202, and polling `GET /api/claims/CLM-1002` shows `in_progress` with steps arriving, then `decided` or `awaiting_sign_off`. (Checked with `MODEL_NAME=openrouter/free`.)
+- [x] `npm run check:python` passes.
 
 ## Phase 5: The dashboard
 

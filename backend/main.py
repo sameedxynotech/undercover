@@ -2,13 +2,15 @@
 
 import json
 import sqlite3
+import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel
 
+from agent import main as agent
 from backend import db
 
 
@@ -315,6 +317,15 @@ def sign_off_claim(claim_id: str, sign_off: SignOff) -> dict[str, str]:
         ).fetchone()["payout"]
         pay(connection, claim_id, payout)
     return state(claim_id, "decided")
+
+
+@app.post("/api/claims/{claim_id}/run", operation_id="run_agent", status_code=202)
+def run_agent(claim_id: str, background_tasks: BackgroundTasks) -> dict[str, str]:
+    """Start the UnderCover Agent on a waiting claim; it works in the background."""
+    start_claim(claim_id)
+    thread_id = str(uuid.uuid4())
+    background_tasks.add_task(agent.work, claim_id, thread_id)
+    return {"claim_id": claim_id, "status": "in_progress", "thread_id": thread_id}
 
 
 @app.post("/api/claims/{claim_id}/failure", operation_id="fail_claim")

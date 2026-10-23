@@ -148,8 +148,13 @@ def steps(message: BaseMessage) -> list[dict[str, str]]:
 
 def run(claim_id: str, thread_id: str, llm: BaseChatModel | None = None) -> str:
     """Run the agent on one claim and return its final reply."""
-    instructions = api("GET", "/api/instructions")
     api("POST", f"/api/claims/{claim_id}/start")
+    return work(claim_id, thread_id, llm)
+
+
+def work(claim_id: str, thread_id: str, llm: BaseChatModel | None = None) -> str:
+    """Work a claim that is already in progress and return the final reply."""
+    instructions = api("GET", "/api/instructions")
     agent = create_agent(llm or model(), tools=TOOLS, system_prompt=instructions)
     reply = ""
     try:
