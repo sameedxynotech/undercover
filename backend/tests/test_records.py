@@ -101,3 +101,8 @@ def test_every_operation_has_an_id_a_summary_and_no_optional_inputs(client):
             body = operation.get("requestBody")
             if body:
                 assert body["required"]
+
+
+def test_get_instructions(client):
+    instructions = client.get("/api/instructions").json()
+    assert instructions.startswith("You are the UnderCover Agent.")

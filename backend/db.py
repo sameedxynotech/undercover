@@ -90,6 +90,9 @@ def seed(connection: sqlite3.Connection) -> None:
         "company": (DATA / "company.json").read_text(encoding="utf-8"),
         "plans": (DATA / "plans.json").read_text(encoding="utf-8"),
         "policy_wording": (DATA / "policy_wording.md").read_text(encoding="utf-8"),
+        "instructions": (ROOT / "backend" / "instructions.md").read_text(
+            encoding="utf-8"
+        ),
     }
     connection.executemany("INSERT INTO documents VALUES (?, ?)", documents.items())
 

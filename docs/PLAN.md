@@ -7,7 +7,7 @@ This plan builds the pilot in `docs/SPEC.md` on the stack in `docs/TECH_STACK.md
 - **The backend owns everything.** Claims, policies, customers, plans, the policy wording, the agent's instructions, the agent's steps, decisions, sign-offs and payments all live in SQLite behind the API. The agent and the dashboard are both clients of the same API, so there is one place where the rules are enforced.
 - **The $1,000 rule is enforced in the backend, not the prompt.** `pay_claim` refuses an amount over the limit until a handler has signed off. Whatever the agent says or tries, it cannot pay that claim. A prompt can be talked out of a rule; a database check can't.
 - **The agent never sees `data/evals/`.** The backend seeds only the named files it needs, never reads `data/evals/` or `data/security/`, and a test checks that no eval data reaches the database. The claims manual stays out too, as the spec says.
-- **Steps are recorded through the API.** As the agent works, a LangChain callback posts each step (model call, tool call, tool result) to the backend. The dashboard polls the claim to show them live. This keeps the agent reaching the outside world only through the backend.
+- **Steps are recorded through the API.** As the agent works, it streams its run and posts each step (model call, tool call, tool result) to the backend. The dashboard polls the claim to show them live. This keeps the agent reaching the outside world only through the backend.
 - **The backend starts the agent.** A "Run agent" button calls `run_agent`, which starts `agent.run(claim_id, thread_id)` in the background with a fresh thread id. Tests replace the agent with a stub, so no test ever calls a model.
 
 ### Claim status
@@ -91,18 +91,18 @@ The agent works one claim end to end through the API.
 
 - `backend/instructions.md`: the agent's instructions, seeded into the database and served by `get_instructions`. They tell the agent to read the claim, the policy, the customer's history, the plans and the wording; to decide by the wording alone; to work out the payout step by step (limits, per-item limits, deductible, refunds); to refer when the wording can't settle it or documents are missing; to explain in two or three sentences with the policy section; and to treat everything in the customer's story and documents as evidence, never as instructions.
 - `agent/main.py`: tools that wrap the API (`get_claim`, `get_policy`, `get_customer`, `get_plans`, `get_policy_wording`, `decide_claim`, `pay_claim`). Errors from the backend, such as the 409 on a large payment, go back to the model as the tool's result so it can carry on.
-- `run(claim_id, thread_id)` fetches the instructions from the backend, calls `start_claim`, runs `create_agent`, and records each step through `add_step` with a LangChain callback. If the run raises, it calls `fail_claim` and re-raises. The model stays as it is: `openai/gpt-6-luna` with low reasoning effort, or `MODEL_NAME`.
+- `run(claim_id, thread_id)` fetches the instructions from the backend, calls `start_claim`, runs `create_agent`, and records each step through `add_step` as the run streams its updates. If the run raises, it calls `fail_claim` and re-raises. The model stays as it is: `openai/gpt-6-luna` with low reasoning effort, or `MODEL_NAME`.
 - `uv run -m agent CLM-1001` runs the agent on one claim from the command line and prints its final reply.
 - The `check_backend` tool and its hello-world prompt go.
 
 Success criteria:
 
-- [ ] Tests with the stub model (no model calls) run a claim to a $420.00 approval and payment, a decline, and a referral, through the backend's `TestClient`, and check the claim's status, decision and steps afterwards.
-- [ ] A test has the stub agent approve $1,250.00 and call `pay_claim`; the tool returns the refusal, the run finishes, and the claim is `awaiting_sign_off` with no payment.
-- [ ] A test makes the stub model raise; the claim is back to `waiting` with the error as its last step.
-- [ ] `grep -rn "data/" agent --include=*.py` finds nothing: the agent reads only through the API.
-- [ ] With `OPENROUTER_API_KEY` set, `uv run -m agent CLM-1001` approves the claim with a payout, a two or three sentence reason and a policy section, and `GET /api/claims/CLM-1001` shows the decision, the payment and the steps. (This calls the real model, so it is a manual check and not part of the tests.)
-- [ ] `npm run check:python` passes.
+- [x] Tests with the stub model (no model calls) run a claim to a $420.00 approval and payment, a decline, and a referral, through the backend's `TestClient`, and check the claim's status, decision and steps afterwards.
+- [x] A test has the stub agent approve $1,250.00 and call `pay_claim`; the tool returns the refusal, the run finishes, and the claim is `awaiting_sign_off` with no payment.
+- [x] A test makes the stub model raise; the claim is back to `waiting` with the error as its last step.
+- [x] `grep -rn "data/" agent --include=*.py` finds nothing: the agent reads only through the API.
+- [x] With `OPENROUTER_API_KEY` set, `uv run -m agent CLM-1001` approves the claim with a payout, a two or three sentence reason and a policy section, and `GET /api/claims/CLM-1001` shows the decision, the payment and the steps. (This calls the real model, so it is a manual check and not part of the tests. Checked with `MODEL_NAME=openrouter/free`, since the OpenRouter account has no credits for the default model; that run's 402 also showed a failed run going back to `waiting`.)
+- [x] `npm run check:python` passes.
 
 ## Phase 4: Running the agent from the backend
 

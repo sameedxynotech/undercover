@@ -173,6 +173,13 @@ def get_policy_wording() -> str:
         return document(connection, "policy_wording")
 
 
+@app.get("/api/instructions", operation_id="get_instructions")
+def get_instructions() -> str:
+    """Get the UnderCover Agent's instructions."""
+    with db.connect() as connection:
+        return document(connection, "instructions")
+
+
 @app.get("/api/handlers", operation_id="list_handlers")
 def list_handlers() -> list[dict[str, Any]]:
     """List the claims handlers."""
