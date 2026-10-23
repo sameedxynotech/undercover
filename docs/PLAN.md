@@ -78,12 +78,12 @@ The write side, with the rules enforced here.
 
 Success criteria:
 
-- [ ] Tests cover every transition in the status table and every refusal: deciding twice, deciding a claim that isn't in progress, a decline with a payout, paying a declined claim, paying a different amount, paying twice, and signing off a claim that isn't awaiting sign-off.
-- [ ] A test approves a $1,250.00 payout, calls `pay_claim` with $1,250.00 and gets 409 with a message saying a handler must sign off. The claim stays `awaiting_sign_off` and no payment is recorded.
-- [ ] The same test signs off as HND-01; the claim is `decided`, with one payment of $1,250.00 and the sign-off's handler and time.
-- [ ] A test approves $1,000.00 exactly and pays it straight through, since only a payout over the limit needs sign-off.
-- [ ] A walkthrough with `curl` against the running backend on one claim (start, step, decide, pay) gives the responses above.
-- [ ] `npm run check:python` passes with coverage of at least 80%.
+- [x] Tests cover every transition in the status table and every refusal: deciding twice, deciding a claim that isn't in progress, a decline with a payout, paying a declined claim, paying a different amount, paying twice, and signing off a claim that isn't awaiting sign-off.
+- [x] A test approves a $1,250.00 payout, calls `pay_claim` with $1,250.00 and gets 409 with a message saying a handler must sign off. The claim stays `awaiting_sign_off` and no payment is recorded.
+- [x] The same test signs off as HND-01; the claim is `decided`, with one payment of $1,250.00 and the sign-off's handler and time.
+- [x] A test approves $1,000.00 exactly and pays it straight through, since only a payout over the limit needs sign-off.
+- [x] A walkthrough with `curl` against the running backend on one claim (start, step, decide, pay) gives the responses above.
+- [x] `npm run check:python` passes with coverage of at least 80%.
 
 ## Phase 3: The UnderCover Agent
 

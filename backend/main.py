@@ -4,9 +4,10 @@ import json
 import sqlite3
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 from backend import db
 
@@ -19,6 +20,30 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="UnderCover", lifespan=lifespan)
+
+
+class Step(BaseModel):
+    kind: str
+    text: str
+
+
+class Decision(BaseModel):
+    decision: Literal["approve", "decline", "refer"]
+    payout: float
+    reason: str
+    policy_section: str
+
+
+class Payment(BaseModel):
+    amount: float
+
+
+class SignOff(BaseModel):
+    handler_id: str
+
+
+class Failure(BaseModel):
+    error: str
 
 
 def record(connection: sqlite3.Connection, table: str, key: str, value: str) -> Any:
@@ -154,3 +179,148 @@ def list_handlers() -> list[dict[str, Any]]:
     with db.connect() as connection:
         rows = connection.execute("SELECT data FROM handlers ORDER BY handler_id")
         return [json.loads(row["data"]) for row in rows]
+
+
+def require_status(connection: sqlite3.Connection, claim_id: str, status: str) -> None:
+    """Raise 409 unless the claim has the given status."""
+    current = claim_status(connection, claim_id)
+    if current != status:
+        raise HTTPException(409, f"Claim {claim_id} is {current}, not {status}")
+
+
+def set_status(connection: sqlite3.Connection, claim_id: str, status: str) -> None:
+    """Move a claim to a new status."""
+    connection.execute(
+        "UPDATE claims SET status = ? WHERE claim_id = ?", (status, claim_id)
+    )
+
+
+def approval_limit(connection: sqlite3.Connection) -> float:
+    """Return the payout above which a handler must sign off."""
+    return json.loads(document(connection, "company"))["payout_approval_limit"]
+
+
+def state(claim_id: str, status: str) -> dict[str, str]:
+    """Return a claim's id and status after a change."""
+    return {"claim_id": claim_id, "status": status}
+
+
+@app.post("/api/claims/{claim_id}/start", operation_id="start_claim")
+def start_claim(claim_id: str) -> dict[str, str]:
+    """Mark a waiting claim as in progress before the agent works on it."""
+    with db.connect() as connection:
+        require_status(connection, claim_id, "waiting")
+        set_status(connection, claim_id, "in_progress")
+    return state(claim_id, "in_progress")
+
+
+@app.post("/api/claims/{claim_id}/steps", operation_id="add_step")
+def add_step(claim_id: str, step: Step) -> dict[str, str]:
+    """Record one step the agent took on a claim."""
+    with db.connect() as connection:
+        status = claim_status(connection, claim_id)
+        connection.execute(
+            "INSERT INTO steps (claim_id, kind, text) VALUES (?, ?, ?)",
+            (claim_id, step.kind, step.text),
+        )
+    return state(claim_id, status)
+
+
+@app.post("/api/claims/{claim_id}/decision", operation_id="decide_claim")
+def decide_claim(claim_id: str, decision: Decision) -> dict[str, str]:
+    """Approve, decline or refer a claim, with the payout, reason and section."""
+    with db.connect() as connection:
+        require_status(connection, claim_id, "in_progress")
+        if row_or_none(connection, "decisions", claim_id):
+            raise HTTPException(409, f"Claim {claim_id} is already decided")
+        if decision.decision == "approve" and decision.payout <= 0:
+            raise HTTPException(400, "An approval needs a payout above 0")
+        if decision.decision != "approve" and decision.payout != 0:
+            raise HTTPException(400, f"A {decision.decision} must have a payout of 0")
+        connection.execute(
+            "INSERT INTO decisions (claim_id, decision, payout, reason, policy_section)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (
+                claim_id,
+                decision.decision,
+                decision.payout,
+                decision.reason,
+                decision.policy_section,
+            ),
+        )
+        if decision.decision != "approve":
+            status = "decided"
+        elif decision.payout > approval_limit(connection):
+            status = "awaiting_sign_off"
+        else:
+            status = "in_progress"
+        set_status(connection, claim_id, status)
+    return state(claim_id, status)
+
+
+@app.post("/api/claims/{claim_id}/payment", operation_id="pay_claim")
+def pay_claim(claim_id: str, payment: Payment) -> dict[str, str]:
+    """Pay an approved claim its payout; over the limit, a handler signs off first."""
+    with db.connect() as connection:
+        decision = row_or_none(connection, "decisions", claim_id)
+        if decision is None or decision["decision"] != "approve":
+            raise HTTPException(409, f"Claim {claim_id} is not approved")
+        if row_or_none(connection, "payments", claim_id):
+            raise HTTPException(409, f"Claim {claim_id} is already paid")
+        if payment.amount != decision["payout"]:
+            raise HTTPException(
+                400,
+                f"The approved payout is ${decision['payout']:,.2f},"
+                f" not ${payment.amount:,.2f}",
+            )
+        if claim_status(connection, claim_id) == "awaiting_sign_off":
+            raise HTTPException(
+                409,
+                f"A payout over ${approval_limit(connection):,.2f} waits for a handler"
+                " to sign off. The handler's sign-off releases the payment.",
+            )
+        pay(connection, claim_id, payment.amount)
+    return state(claim_id, "decided")
+
+
+def pay(connection: sqlite3.Connection, claim_id: str, amount: float) -> None:
+    """Record a payment and close the claim. No real money moves."""
+    connection.execute(
+        "INSERT INTO payments (claim_id, amount) VALUES (?, ?)", (claim_id, amount)
+    )
+    set_status(connection, claim_id, "decided")
+
+
+@app.post("/api/claims/{claim_id}/sign-off", operation_id="sign_off_claim")
+def sign_off_claim(claim_id: str, sign_off: SignOff) -> dict[str, str]:
+    """Sign off a payout over the limit as a handler, which releases the payment."""
+    with db.connect() as connection:
+        require_status(connection, claim_id, "awaiting_sign_off")
+        handler = record(connection, "handlers", "handler_id", sign_off.handler_id)
+        if not handler["can_approve_over_limit"]:
+            raise HTTPException(403, f"{handler['name']} can't sign off this payout")
+        connection.execute(
+            "INSERT INTO sign_offs (claim_id, handler_id) VALUES (?, ?)",
+            (claim_id, sign_off.handler_id),
+        )
+        payout = connection.execute(
+            "SELECT payout FROM decisions WHERE claim_id = ?", (claim_id,)
+        ).fetchone()["payout"]
+        pay(connection, claim_id, payout)
+    return state(claim_id, "decided")
+
+
+@app.post("/api/claims/{claim_id}/failure", operation_id="fail_claim")
+def fail_claim(claim_id: str, failure: Failure) -> dict[str, str]:
+    """Record that the agent's run failed; an unfinished claim goes back to waiting."""
+    with db.connect() as connection:
+        status = claim_status(connection, claim_id)
+        connection.execute(
+            "INSERT INTO steps (claim_id, kind, text) VALUES (?, 'error', ?)",
+            (claim_id, failure.error),
+        )
+        if status == "in_progress":
+            connection.execute("DELETE FROM decisions WHERE claim_id = ?", (claim_id,))
+            status = "waiting"
+            set_status(connection, claim_id, status)
+    return state(claim_id, status)
