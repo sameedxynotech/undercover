@@ -135,14 +135,14 @@ Success criteria:
 
 ## Phase 6: End-to-end tests and handover
 
-- Playwright starts the backend with `UNDERCOVER_DB` pointing at a fresh database under `e2e/test-results/`, so the tests never touch the working database. The tests drive the claims through the API (`start_claim`, `add_step`, `decide_claim`) to set them up, so they never call a model.
+- Playwright starts its own backend on port 8001 with `UNDERCOVER_DB` pointing at a fresh database in the system's temp folder, and its own dashboard on port 5174 proxying to it (through `BACKEND_URL`), so the tests never touch the working database and run alongside `npm run dev`. The tests drive the claims through the API (`start_claim`, `add_step`, `decide_claim`) to set them up, so they never call a model.
 - Tests: the queue lists 25 claims; a decided claim shows its decision, reason, section and steps; a claim approved for $1,250.00 shows waiting for sign-off, the payment is refused, and signing off in the page moves it to decided; the instructions page shows the instructions.
 - `docs/STATUS.md` describes what's built and how to run it; the README stays short.
 
 Success criteria:
 
-- [ ] `npm run e2e` passes, and the health test is kept or replaced by the queue test.
-- [ ] Running `npm run e2e` twice in a row passes both times, and `backend/undercover.db` is unchanged by it.
-- [ ] With the backend running and `OPENROUTER_API_KEY` set, the agent runs on five claims from the dashboard and each ends `decided` or `awaiting_sign_off` with a reason and section. (A manual check that calls the real model; accuracy against the handlers' decisions is for a later build.)
-- [ ] `docs/STATUS.md` is up to date.
-- [ ] `npm run check` passes in full.
+- [x] `npm run e2e` passes, and the health test is kept or replaced by the queue test.
+- [x] Running `npm run e2e` twice in a row passes both times, and `backend/undercover.db` is unchanged by it.
+- [ ] With the backend running and `OPENROUTER_API_KEY` set, the agent runs on five claims from the dashboard and each ends `decided` or `awaiting_sign_off` with a reason and section. (A manual check that calls the real model; accuracy against the handlers' decisions is for a later build.) Not complete: with `MODEL_NAME=openrouter/free`, three claims ran from the dashboard to a decision with a reason and section (CLM-1004, CLM-1005, CLM-1006), and CLM-1001 to CLM-1003 from the command line and the API. Then OpenRouter's free limit of 50 requests a day ran out; CLM-1007 and CLM-1008 went back to `waiting` with the 429 recorded as a step. Rerun with credits on the account or after the limit resets.
+- [x] `docs/STATUS.md` is up to date.
+- [x] `npm run check` passes in full.
